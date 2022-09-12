@@ -10,12 +10,6 @@ import (
 	"time"
 )
 
-// KEY
-// Empty square: 0
-// Snake body:   1
-// Snake head:   2
-// Food:         5
-
 type Game struct {
 	Rows int
 	Columns int
@@ -165,7 +159,7 @@ func (game *Game) cleanTrail() {
 
 	for coordinate := range game.Trail {
 		xy := game.Trail[coordinate]
-		game.Board[xy[0]][xy[1]] = -1
+		game.Board[xy[0]][xy[1]] = 1
 	}
 
 	game.Trail = [][]int{}
