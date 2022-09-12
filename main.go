@@ -1,15 +1,18 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"math/rand"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
-// key
+// KEY
 // Empty square: 0
+// Snake body:   1
 // Snake head:   2
 // Food:         5
 
@@ -19,6 +22,8 @@ type Game struct {
 	Board [][]int
 	SnakeHead [2]int
 	FoodPosition [2]int
+	LengthOfSnake int
+	Trail [][]int
 }
 
 func main() {
@@ -27,13 +32,33 @@ func main() {
 	game.Rows = 15
 	game.Columns = 17
 
-	game.Board = game.setupBoard();
+	game.Board = game.setupBoard()
 	game.SnakeHead[0] = 0
 	game.SnakeHead[1] = 0
 
 	game.placeFood()
-
 	game.printBoard()
+
+	for {
+		var direction string
+		fmt.Print("Move (w, a, s, d): ")
+		fmt.Scanln(&direction)
+
+		err := game.move(direction)
+
+		if (err != nil) {
+			fmt.Println(err.Error())
+			os.Exit(0)
+		}
+
+		if (game.SnakeHead[0] == game.FoodPosition[0] && game.SnakeHead[1] == game.FoodPosition[1]) {
+			fmt.Println("Success")
+
+			game.placeFood()
+		}
+
+		game.printBoard()
+	}
 }
 
 func (game Game) setupBoard() [][]int {
@@ -59,7 +84,7 @@ func (game Game) printBoard() {
 	fmt.Printf("Coordinate of snake head: {%d, %d}\n", game.SnakeHead[0], game.SnakeHead[1])
 }
 
-func (game Game) placeFood() {
+func (game *Game) placeFood() {
 	possibleXY := []string{}
 
 	for x := range game.Board {
@@ -82,4 +107,66 @@ func (game Game) placeFood() {
 	game.FoodPosition[0] = pX
 	game.FoodPosition[1] = pY
 	game.Board[pX][pY] = 5
+}
+
+func (game *Game) move (direction string) error {
+	if direction != "w" && direction != "a" && direction != "s" && direction != "d" {
+		return nil
+	}
+
+	prevX := game.SnakeHead[0]
+	prevY := game.SnakeHead[1]
+
+	game.Board[prevX][prevY] = 0
+
+	if (direction == "w") {
+		if (game.SnakeHead[0] - 1 > -1) {
+			oldX := game.SnakeHead[0]
+			game.SnakeHead[0] = oldX - 1
+		}
+	}
+
+	if direction == "d"{
+		if game.SnakeHead[1] + 1 < game.Columns{
+			oldY := game.SnakeHead[1]
+			game.SnakeHead[1] = oldY + 1
+		}
+	}
+
+	if (direction == "s") {
+		if (game.SnakeHead[0] + 1 < game.Rows) {
+			oldX := game.SnakeHead[0]
+			game.SnakeHead[0] = oldX + 1
+		}
+	}
+
+	if direction == "a"{
+		if game.SnakeHead[1] - 1 > -1{
+			oldY := game.SnakeHead[1]
+			game.SnakeHead[1] = oldY - 1
+		}
+	}
+
+	x := game.SnakeHead[0]
+	y := game.SnakeHead[1]
+
+	if (game.Board[x][y] == 1) {
+		return errors.New("Game over")
+	}
+
+	game.Board[x][y] = 2
+	game.Board[prevX][prevY] = 1
+	game.Trail = append(game.Trail, []int{prevX, prevY})
+	return nil
+}
+
+func (game *Game) cleanTrail() {
+	game.LengthOfSnake += len(game.Trail)
+
+	for coordinate := range game.Trail {
+		xy := game.Trail[coordinate]
+		game.Board[xy[0]][xy[1]] = -1
+	}
+
+	game.Trail = [][]int{}
 }
